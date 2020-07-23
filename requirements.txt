@@ -2,3 +2,4 @@ eyed3>=0.8.0b1
 gmusicapi
 goldfinch
 pathlib
+tqdm

@@ -1,60 +1,97 @@
 #!/usr/bin/env python
- 
+
 import os
 import sys
+from argparse import ArgumentParser
+
 import eyed3
-from goldfinch import validFileName as vfn
 from gmusicapi import Mobileclient
-import getpass
+from gmusicapi.exceptions import InvalidDeviceId
+from goldfinch import validFileName as vfn
+from tqdm import tqdm
+
 try:
-  from urllib.request import urlretrieve
+    from urllib.request import urlretrieve
 except ImportError:
-  from urllib import urlretrieve
+    from urllib import urlretrieve
+
+def npath(path):
+    return vfn(path, space='keep', initCap=False).decode('utf-8').rstrip('.')
+
+parser = ArgumentParser()
+parser.add_argument(dest='mail')
+parser.add_argument('-o', '--output', dest='output',
+                    default=os.path.join(os.getcwd(), 'Music'))
+#parser.add_argument('-p', '--password', dest='passwd')
+parser.add_argument('-i', '--device-id', dest='device_id', default=0)
+
+args, unknown = parser.parse_known_args()
+
+login = args.mail
+targetDir = args.output
 
 
-if len(sys.argv) == 1:
-  print("usage: python gmusic-dl.py <email> <album id>")
-  sys.exit()
+device_id = args.device_id
 
+eyed3.log.setLevel('ERROR')
 
-def normalizePath(input):
-  return vfn(input, space="keep", initCap=False).decode('utf-8').rstrip(".")  
+api = Mobileclient(debug_logging=True)
 
+if not os.path.exists(api.OAUTH_FILEPATH):
+    api.perform_oauth(
+        storage_filepath=api.OAUTH_FILEPATH,
+        open_browser=True
+    )
 
-login = sys.argv[1]
-targetDir = os.getcwd()
-albumId = sys.argv[2]
-password = getpass.getpass()
+try:
+    logged_in = api.oauth_login(
+        args.device_id
+    )
+except InvalidDeviceId as e:
+    print(str(e))
+    sys.exit()
 
-eyed3.log.setLevel("ERROR")
+print('\nSuccessful login:', logged_in)
+if not logged_in:
+    exit()
 
-api = Mobileclient(debug_logging=False)
-api.login(login, password, Mobileclient.FROM_MAC_ADDRESS)
+pbar = tqdm(api.get_all_songs())
 
-album = api.get_album_info(albumId)
-dirName = normalizePath("%s - %s" % (album["artist"], album["name"]))
-dirPath = targetDir + "/" + dirName
+for song in pbar:  # album['tracks']:
+    dirName = os.path.join(
+        npath(song['artist']),
+        npath(song['album'])
+    )
+    dirPath = os.path.join(
+        targetDir,
+        dirName
+    )
 
-print("downloading to directory: " + dirPath)
-if not os.path.exists(dirPath):
-    os.makedirs(dirPath)
-	
-for song in album["tracks"]:
-  url = api.get_stream_url(song_id=song["storeId"], quality="hi")
-  fileName = normalizePath("%s. %s - %s.mp3" % (song["trackNumber"], song["artist"], song["title"]))
-  filePath = dirPath + "/" + fileName
-  print("downloading: " + fileName)
-  urlretrieve(url, filePath)
-  
-  audio = eyed3.load(filePath)
-  if audio.tag is None:
-    audio.tag = eyed3.id3.Tag()
-    audio.tag.file_info = eyed3.id3.FileInfo(filePath)
-  audio.tag.artist = song["artist"]
-  audio.tag.album = album["name"]
-  audio.tag.album_artist = album["artist"]
-  audio.tag.title = song["title"]
-  audio.tag.track_num = song["trackNumber"]
-  audio.tag.save()
+    if not os.path.exists(dirPath):
+        os.makedirs(dirPath)
 
-print("done.")
+    url = api.get_stream_url(song_id=song['id'], quality='hi')
+    fileName = '{:02d}. {}'.format(
+        song['trackNumber'],
+        npath(song['title'])
+    )
+    filePath = os.path.join(dirPath, fileName)
+
+    if os.path.exists(filePath):
+        continue
+
+    #print('downloading: ' + fileName)
+    pbar.set_description(fileName)
+    urlretrieve(url, filePath)
+
+    audio = eyed3.load(filePath)
+    if audio.tag is None:
+        audio.tag = eyed3.id3.Tag()
+        audio.tag.file_info = eyed3.id3.FileInfo(filePath)
+    audio.tag.artist = song['artist']
+    audio.tag.album = song['album']
+    audio.tag.title = song['title']
+    audio.tag.track_num = song['trackNumber']
+    audio.tag.save()
+
+print('done!')
