@@ -12,8 +12,21 @@ I haven't tested it extensively, so bugs are very likely. I don't know how it wo
 Either way, I hope this helps someone. If you find some bugs, let me know and I'll try to find some time to fix it.
 
 ```
-pip install -r requirements.txt
-python gmusic-dl.py [-h] [-o OUTPUT] [-i DEVICE_ID] mail
+`pip install -r requirements.txt`
+usage:
+
+`gmusic-dl.py [-h] [-o OUTPUT] [-i DEVICE_ID] [-l] mail`
+
+positional arguments:
+  mail                  Your google mail for login.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OUTPUT, --output OUTPUT
+                        Destination to download files to. Default is ./Music/ (same folder)
+  -i DEVICE_ID, --device-id DEVICE_ID
+                        Device ID to use - run without argument first to see available device IDs and then use one.
+  -l, --log             Enable to have log printed to "log.txt".
 ```
 ## Example:
 
