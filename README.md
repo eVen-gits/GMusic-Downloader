@@ -12,10 +12,10 @@ I haven't tested it extensively, so bugs are very likely. I don't know how it wo
 Either way, I hope this helps someone. If you find some bugs, let me know and I'll try to find some time to fix it.
 
 ```
-`pip install -r requirements.txt`
+pip install -r requirements.txt
 usage:
 
-`gmusic-dl.py [-h] [-o OUTPUT] [-i DEVICE_ID] [-l] mail`
+gmusic-dl.py [-h] [-o OUTPUT] [-i DEVICE_ID] [-l] mail
 
 positional arguments:
   mail                  Your google mail for login.
