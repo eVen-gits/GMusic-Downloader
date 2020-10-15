@@ -85,7 +85,6 @@ for song in pbar:  # album['tracks']:
         npath(song['title'])
     )
 
-    url = api.get_stream_url(song_id=song['id'], quality='hi')
 
     filePath = os.path.join(dirPath, fileName)
 
@@ -96,6 +95,7 @@ for song in pbar:  # album['tracks']:
     #print('downloading: ' + fileName)
     pbar.set_description(fileName)
     try:
+        url = api.get_stream_url(song_id=song['id'], quality='hi')
         urlretrieve(url, filePath)
         downloaded.append(fileName)
     except Exception as e:
