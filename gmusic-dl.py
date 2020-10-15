@@ -80,7 +80,7 @@ for song in pbar:  # album['tracks']:
     if not os.path.exists(dirPath):
         os.makedirs(dirPath)
 
-    fileName = '{:02d}. {}'.format(
+    fileName = '{:02d}. {}.mp3'.format(
         song['trackNumber'],
         npath(song['title'])
     )
