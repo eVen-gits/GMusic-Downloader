@@ -9,6 +9,7 @@ from gmusicapi import Mobileclient
 from gmusicapi.exceptions import InvalidDeviceId
 from goldfinch import validFileName as vfn
 from tqdm import tqdm
+from shutil import move
 
 try:
     from urllib.request import urlretrieve
@@ -76,30 +77,29 @@ for song in pbar:  # album['tracks']:
         targetDir,
         dirName
     )
-
-    if not os.path.exists(dirPath):
-        os.makedirs(dirPath)
-
-    fileName = '{:02d}. {}.mp3'.format(
+    fileName = npath('{:02d}. {}{}'.format(
         song['trackNumber'],
-        npath(song['title'])
-    )
-
-
+        song['title'],
+        '.mp3' if not song['title'].endswith('.mp3') else ''
+    ))
+    pbar.set_description('{}'.format(fileName).ljust(25)[:25])
     filePath = os.path.join(dirPath, fileName)
 
     if os.path.exists(filePath):
         skipped.append(fileName)
         continue
 
+
     #print('downloading: ' + fileName)
-    pbar.set_description(fileName)
     try:
         url = api.get_stream_url(song_id=song['id'], quality='hi')
-        urlretrieve(url, filePath)
+        urlretrieve(url, fileName)
+        if not os.path.exists(dirPath):
+            os.makedirs(dirPath)
+        move(fileName, filePath)
         downloaded.append(fileName)
     except Exception as e:
-        print(str(e))
+        print('\n', str(e), '\n')
         failed.append(fileName)
         continue
 
